@@ -1,0 +1,32 @@
+(() => {
+  const hook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  const fields = [], messages = [], actions = [], states = [];
+  const seen = new Set();
+  function visit(fiber) {
+    if (!fiber || seen.has(fiber)) return;
+    seen.add(fiber);
+    const props = fiber.memoizedProps;
+    if (props?.testID === 'task-title-input') {
+      fields.push({ value: props.value, codePoints: Array.from(props.value ?? '').map(x => x.codePointAt(0)),
+        accessibilityLabel: props.accessibilityLabel, accessibilityLabelledBy: props.accessibilityLabelledBy,
+        editable: props.editable, multiline: props.multiline });
+    }
+    if (props?.testID === 'task-status') messages.push(props.children);
+    if (props?.testID?.endsWith('-button')) actions.push({ id: props.testID, label: props.accessibilityLabel, disabled: props.disabled, state: props.accessibilityState });
+    if (fiber.type?.name === 'TasksScreen') {
+      let state = fiber.memoizedState;
+      while (state) {
+        const value = state.memoizedState;
+        if (value && typeof value === 'object' && typeof value.status === 'string') {
+          states.push({ status: value.status, taskCount: value.tasks?.length });
+        }
+        state = state.next;
+      }
+    }
+    visit(fiber.child); visit(fiber.sibling);
+  }
+  for (const id of hook.renderers.keys()) for (const root of hook.getFiberRoots(id)) visit(root.current);
+  return { fields: Array.from(new Map(fields.map(x => [JSON.stringify(x),x])).values()),
+    messages: Array.from(new Set(messages)),
+    actions: Array.from(new Map(actions.map(x => [JSON.stringify(x),x])).values()), states };
+})()

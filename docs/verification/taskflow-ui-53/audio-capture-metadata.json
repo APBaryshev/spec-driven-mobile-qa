@@ -1,0 +1,16 @@
+[
+  {
+    "file": "talkback-field-hardware.wav",
+    "seconds": 11.9815,
+    "peak": 1102,
+    "nonzeroSamples": 118354,
+    "listened": false
+  },
+  {
+    "file": "talkback-validation-error.wav",
+    "seconds": 12.00475,
+    "peak": 1626,
+    "nonzeroSamples": 31895,
+    "listened": false
+  }
+]

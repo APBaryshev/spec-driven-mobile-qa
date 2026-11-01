@@ -1,0 +1,23 @@
+{
+  "clipboardInput": "First\nSecond",
+  "clipboardCodePoints": [
+    70,
+    105,
+    114,
+    115,
+    116,
+    10,
+    83,
+    101,
+    99,
+    111,
+    110,
+    100
+  ],
+  "nativeAction": "Android floating context menu Paste",
+  "displayedText": "First Second",
+  "submitOutcome": "Название должно быть в одну строку. Удалите переводы строк.",
+  "newTaskCreated": false,
+  "nativeCopyOutput": "First Second",
+  "note": "Display and native Copy transform LF to space. Read-only CDP confirms the exact JS draft First\\nSecond before and after submit; see paste-lf-before-submit.json and paste-lf-after-submit.json."
+}
