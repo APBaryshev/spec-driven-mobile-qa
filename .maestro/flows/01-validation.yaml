@@ -1,0 +1,38 @@
+appId: dev.taskflow.app
+name: First launch and title validation
+---
+# Requires an empty dedicated test installation. Never clears app data.
+- launchApp
+- assertVisible:
+    id: task-empty
+- assertVisible:
+    id: task-create-button
+    enabled: true
+- tapOn:
+    id: task-create-button
+- assertVisible: "Введите название задачи."
+- assertNotVisible:
+    id: task-title
+- tapOn:
+    id: task-title-input
+- inputText: "   "
+- tapOn:
+    id: task-create-button
+- assertVisible: "Введите название задачи."
+- tapOn:
+    id: task-title-input
+- eraseText
+- inputText: ${'x'.repeat(101)}
+- tapOn:
+    id: task-create-button
+- assertVisible: "Название должно содержать не более 100 символов."
+- copyTextFrom:
+    id: task-title-input
+- assertTrue: ${maestro.copiedText == 'x'.repeat(101)}
+- assertNotVisible:
+    id: task-title
+- assertVisible:
+    id: task-empty
+- tapOn:
+    id: task-title-input
+- eraseText

@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "TaskFlow",
+    "slug": "taskflow",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "dev.taskflow.app",
+      "versionCode": 1
+    }
+  }
+}

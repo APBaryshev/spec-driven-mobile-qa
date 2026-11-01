@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="Pixel_6_Pro" tests="1" failures="0" time="41.0">
+    <testcase id="Duplicate titles, newest first and force-stop persistence" name="Duplicate titles, newest first and force-stop persistence" classname="Duplicate titles, newest first and force-stop persistence" file=".maestro/flows/02-creation-persistence.yaml" time="41.0" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

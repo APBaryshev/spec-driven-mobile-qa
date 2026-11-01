@@ -1,0 +1,7 @@
+{
+  "system/font_scale": "1.0",
+  "secure/enabled_accessibility_services": "null",
+  "secure/accessibility_enabled": "1",
+  "secure/default_input_method": "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME",
+  "secure/show_ime_with_hard_keyboard": "1"
+}

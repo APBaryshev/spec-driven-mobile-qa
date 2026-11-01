@@ -1,0 +1,64 @@
+{
+  "result": {
+    "className": "Object",
+    "description": "Object",
+    "type": "object",
+    "value": {
+      "actions": [
+        {
+          "disabled": false,
+          "id": "task-create-button"
+        },
+        {
+          "disabled": false,
+          "id": "task-create-button",
+          "label": "Создать задачу",
+          "state": {
+            "busy": false,
+            "disabled": false
+          }
+        },
+        {
+          "id": "task-create-button",
+          "label": "Создать задачу",
+          "state": {
+            "busy": false,
+            "disabled": false
+          }
+        }
+      ],
+      "fields": [
+        {
+          "accessibilityLabel": "Название задачи",
+          "accessibilityLabelledBy": "task-title-label",
+          "codePoints": [
+            70,
+            105,
+            114,
+            115,
+            116,
+            13,
+            83,
+            101,
+            99,
+            111,
+            110,
+            100
+          ],
+          "editable": true,
+          "multiline": false,
+          "value": "First\rSecond"
+        }
+      ],
+      "messages": [
+        ""
+      ],
+      "states": [
+        {
+          "status": "ready",
+          "taskCount": 14
+        }
+      ]
+    }
+  }
+}
