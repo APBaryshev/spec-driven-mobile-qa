@@ -1,11 +1,15 @@
 # Прослеживаемость TaskFlow
 
 Источник требований: [task-management/spec.md](../openspec/changes/task-management-foundation/specs/task-management/spec.md).
-Область этого отчёта — задачи 2.1–4.4 [плана](../openspec/changes/task-management-foundation/tasks.md).
+Область этого отчёта — задачи 2.1–5.4 [плана](../openspec/changes/task-management-foundation/tasks.md).
 «Пройдено, unit» означает проверку правил модели в Jest, а не готовность всего
 пользовательского сценария. «Пройдено, integration» для хранения означает настоящую
 сериализацию и JS-обёртку AsyncStorage с управляемым нативным key-value I/O.
-UI задач и нативная сохранность Android E2E здесь не проверены.
+Текущие UI-проверки и ручной Android-прогон приведены в разделе
+[«Пользовательский экран: группа 5»](#пользовательский-экран-группа-5).
+Предыдущие разделы сохраняют результаты на момент соответствующего этапа;
+их отметки «UI не проверен» уточняются новой таблицей. Нативная сохранность
+Android E2E остаётся непроверенной (группа 6).
 
 ## TM-01 — проверка названия
 
@@ -263,3 +267,294 @@ JS, stop/launch без очистки данных, фактическая ос�
 
 Proposal, spec и design сохранены. Выполнены только 4.1–4.4; группы 5–6
 не выполнялись. Git commit, push и архивирование не выполнялись.
+
+## Пользовательский экран: группа 5
+
+Результаты ниже относятся к первому UI-прогону. Оставшиеся проверки 5.3
+уточнены в [дополнительном прогоне после ревью](#дополнительная-проверка-53-после-независимого-ревью).
+
+2026-11-01, macOS arm64, Node **26.13.0**, npm **11.17.0**.
+Базовый commit **273c686**, изменения этого прогона не закоммичены.
+Реализация: [TasksScreen.tsx](../src/features/tasks/TasksScreen.tsx),
+[App.tsx](../App.tsx). Утверждённые proposal/spec/design, модель, taskId,
+TaskStorage и useTasks не изменены. Добавлена только прямая зависимость
+`react-native-safe-area-context@5.10.1` (версия из bundledNativeModules Expo 58);
+lockfile добавляет один пакет, остальные записи зависимостей сохранены.
+
+Экран содержит прокручиваемую форму в заголовке FlatList и строки по стабильным
+ID. У названий нет numberOfLines, фиксированной высоты и отключения font scaling.
+SafeAreaProvider находится в App, SafeAreaView и KeyboardAvoidingView — в экране.
+`keyboardShouldPersistTaps="handled"` позволяет активировать создание при
+открытой клавиатуре; `keyboardDismissMode="on-drag"` поддерживает просмотр списка.
+UI не копирует список и не запускает собственный протокол восстановления:
+`state.tasks` — единственный источник подтверждённых данных. Форма хранит только
+черновик и обратную связь; очищает его только по `created`, включая подтверждение
+после `retryReconciliation`. `invalid`, `saveError`, `outcomeUnknown`, `blocked`
+и `inactive` не очищают поле. Синхронный guard hook защищает оба способа отправки.
+
+Автоматические component/integration-проверки:
+[tests/tasks-screen.test.tsx](../tests/tasks-screen.test.tsx), **20 tests passed**.
+Настоящие экран, hook, модель и генератор UUID; управляемые promises заменяют
+только границу TaskStorage. Safe area использует официальный Jest mock пакета:
+нативные insets/компоновка в Jest не доказываются. Отдельный тест App выполняет
+настоящую связку экран → hook → адаптер v1 → AsyncStorage JS с контролируемым
+native callback. Существующие 50 тестов хранения и 37 hook-тестов сохранены.
+
+| Требование / сценарий | Конкретная UI-проверка | Фактический результат |
+| --- | --- | --- |
+| TM-07 «Ожидание чтения», TM-08 «Ошибка доступа», «Успешное повторное чтение»; TM-06 пустое состояние | [loading, empty and read error are distinct; only load error offers guarded reload](../tests/tasks-screen.test.tsx#L68) | Пройдено: загрузка/ошибка не показывают пустое состояние, создание/поле отключены; повтор загрузки только в loadError; нет save; после успешного пустого чтения форма доступна |
+| TM-02 одинаковые названия, TM-03 подтверждение, TM-06 порядок | [confirmed creates clear the draft, preserve duplicate titles and display newest first](../tests/tasks-screen.test.tsx#L92) | Пройдено: A → A,A → C,A,A, разные ID; до settlement нет новой строки и очистки, после подтверждения поле пустое |
+| TM-01 пустой/пробельный ввод, превышение длины, внутренний перевод строки; TM-11 текст ошибки | [validation preserves the exact pasted input %j without writing](../tests/tasks-screen.test.tsx#L107) | Пройдено, 11 входов: пусто, пробелы, 101 точка, LF/CR/CRLF/VT/FF/NEL/LS/PS; точный текст остаётся, save отсутствует, alert доступен, исправление убирает ошибку. Это события changeText в Jest, не нативная вставка clipboard |
+| TM-03 незавершённая запись и sent после ошибки, TM-04 быстрые отправки, TM-12 медленная запись/проверка | [rapid button and keyboard submissions share the hook guard; slow saving and reconciliation retain the list](../tests/tasks-screen.test.tsx#L122) | Пройдено: три keyboard callback до render + отключённая кнопка дают один save; черновик заморожен; виден прежний список и разные сообщения saving/reconciling; sent даёт очистку без повторного save |
+| TM-05 «Сбой записи», «Успешный повтор после сбоя», изменение названия после base | [proven absence permits correction=%s and explicit creation retry](../tests/tasks-screen.test.tsx#L148) | Пройдено, два исхода исправления: base сохраняет ввод/список и открывает форму; неизменённый ввод повторяет те же ID/снимок, изменённый добавляет только новую задачу |
+| TM-04 unknown, TM-05 неудачная проверка и повтор до sent/base; TM-11 имена действий | [unknown result retries only reading, then accepts %s](../tests/tasks-screen.test.tsx#L168) | Пройдено: unknown сохраняет текст/список и блокирует поле/создание между проверками; retry читает без save; повторная ошибка сохраняет блокировку; sent очищает, base сохраняет ввод; разные кнопки retry доступны только в нужном состоянии |
+| TM-06 длинное название, TM-11 font scaling и keyboard props | [long titles are untruncated in a virtualized scrollable list with the form in its header](../tests/tasks-screen.test.tsx#L195) | Пройдено: загружены 40 задач, название 99 букв + emoji отображается без ограничения строк/масштаба; прокрутка не отключена. Геометрия и реальный скролл этим тестом не подтверждаются |
+| TM-09 lifecycle, сохранность новой формы после inactive | [an inactive completion cannot clear a new screen draft](../tests/tasks-screen.test.tsx#L209) | Пройдено: старый save завершён после unmount, новая сессия безопасно загружена; новый черновик сохранён, второго save нет. Это JS-сессии |
+| TM-06 пустое состояние, TM-07 подключение приложения | [wires the real screen, hook and stable storage in App](../tests/App.test.tsx#L12) | Пройдено: настоящий App показывает пустое состояние после native callback, создание доступно; rerender App не вызывает повторной загрузки |
+| TM-11 доступные имена/roles/states и динамические сообщения | Проверки getByLabelText/getByRole/toBeDisabled/accessibilityState в тестах выше | Пройдено: имя поля, header TaskFlow, роли button/alert, disabled/busy, именованные повторы. Один polite live region, без дополнительных announceForAccessibility и озвучивания списка на каждую запись |
+
+`testID`: `task-title-input`, `task-create-button`, `task-list`, `task-title`
+(одинаковый тип строки, внутренний React key = ID), `task-empty`, `task-status`,
+`task-retry-load-button`, `task-retry-reconciliation-button`.
+Это идентификаторы автоматизации, доступные имена — обычные русские подписи;
+технические ID задач не выводятся пользователю или диктору.
+
+### Ручной Android-прогон и ограничения
+
+Android SDK AVD **Pixel_6_Pro**, **Android 13 / API 33**, arm64-v8a,
+`emulator-5554`, Expo Go **58.0.5**, TaskFlow **0.1.0** через Metro **8082**.
+Это development UI-прогон с просмотром скриншотов и семантического дерева через
+agent-device; Maestro flows, автономный APK и группа 6 не выполнялись.
+Все названия синтетические, данные других проектов не использовались.
+
+| Проверка | Фактический результат |
+| --- | --- |
+| Старт и обычный шрифт | Показаны TaskFlow, однострочное поле, создание и пустое состояние после чтения; затем Keyboard task создана, поле очищено. [Итоговый экран при обычном шрифте](verification/taskflow-ui/screen-standard.png) |
+| Реальная экранная клавиатура | Проверена Gboard, `agent-device keyboard status` сообщил visible=yes. При масштабе 200% поле и кнопка видны над клавиатурой; нажатие создания при пустом поле показывает текст ошибки. При обычном масштабе нажатие Done на реальной Gboard создало Keyboard live, очистило поле и закрыло клавиатуру |
+| Увеличенный системный шрифт | Временно `font_scale=2.0`; заголовок, поле, подсказка и кнопка читаемы, высота адаптируется. [Скриншот с открытой Gboard](verification/taskflow-ui/keyboard-font200.png). После проверки масштаб возвращён: Android сообщает **1.0**. Настройки Mac не изменялись |
+| Одинаковые названия и новый элемент сверху | Созданы две отдельные строки Same task, затем List 04…List 12; видимый порядок новых строк обратный созданию |
+| Длина и ошибки | Название в 104 ASCII-символа отклонено с сохранением ввода, исправленное название ровно в 100 символов создано. Нативная вставка внутренних переводов строк/emoji через clipboard не проверена |
+| Длинный список и переносы при обычном шрифте | 13 задач на момент скриншота (затем 14 после Keyboard live); `scroll bottom` открыл старую Keyboard task и две Same task; название в 100 символов полностью читается с переносами. [Скриншот нижних строк](verification/taskflow-ui/list-bottom.png). После повторного открытия development UI форма доступна; команда scroll top подтвердила верхнюю позицию |
+| TalkBack | **Не подтверждено**. Пакет установлен; пробное включение записало enabled service, но dumpsys accessibility показал `Ui Automation`, `Bound services: {}`, `touchExplorationEnabled=false`, отсутствие accessibility focus. UI Automation подавляет подключение TalkBack. Полноценная навигация диктором, речь и отсутствие лишних озвучиваний требуют ручного прогона без автоматизационного runner. Служба возвращена в исходное отключённое состояние |
+| Медленный I/O, loadError/saveError/outcomeUnknown и безопасные повторы | Подтверждены только component/integration-тестами с управляемыми promises. В production UI не добавлены переключатели отказов, debug-экраны или координатные тестовые элементы |
+
+Команды прогона: `adb devices -l`, `emulator -list-avds`, проверка процессов и
+порта 8082, `emulator -avd Pixel_6_Pro -no-snapshot-save`, `npm run android`.
+Действия UI: `agent-device open <exp URL> --session taskflow-ui`, `snapshot -i`,
+`fill id=task-title-input <synthetic title>`, `press id=task-create-button`,
+`keyboard status`, `screenshot`, `scroll bottom`, `diff snapshot -i`, `scroll top`.
+Для Gboard использован `adb shell ime set` установленного LatinIME, поскольку
+IME helper инструмента не рисует клавиши. Тестовые изменения font_scale и
+службы TalkBack восстановлены; show_ime_with_hard_keyboard оставлено исходным 1.
+
+Не проверены: TalkBack пользователя без UI Automation, длинный список именно
+при увеличенном шрифте, нативная вставка многострочного ввода, реальные отказы
+AsyncStorage, iOS/web, автономная сборка, нативный stop/launch без Metro,
+остановка процесса при reconciliation и работа без сети. JS-проверки не заменяют
+эти сценарии. Подтверждённые задачи сохраняются только в рамках описанного
+контракта AsyncStorage: без транзакционных гарантий, нескольких писателей,
+восстановления после очистки/переустановки и сохранения черновика после остановки.
+
+### Автоматический прогон группы 5
+
+Использован закреплённый Node/npm через временный PATH из предыдущего отчёта.
+
+| Команда | Фактический результат |
+| --- | --- |
+| `npm test -- --watch=false --runTestsByPath tests/tasks-screen.test.tsx tests/App.test.tsx` | Exit 0, 2 suites / 21 tests passed |
+| `npm test -- --watch=false` | Exit 0, 6 suites / 136 tests passed (20 новых UI + 116 существующих с обновлённым тестом App) |
+| `npm run typecheck` | Exit 0, strict TypeScript |
+| `npm run lint` | Exit 0, без предупреждений |
+| `npx expo install --check` | Exit 0, dependencies are up to date; offline-карта bundledNativeModules, CLI предупредил об ограниченной надёжности без сети |
+| `openspec validate task-management-foundation --strict` | Exit 0, change valid |
+| `git diff --check` | Exit 0 |
+| Проверка относительных файловых Markdown-ссылок README/traceability/tasks | 83 ссылки разрешаются; номера строк в пределах файлов |
+
+5.1, 5.2 и 5.4 выполнены. Код 5.3 реализован, но checkbox остаётся открытым:
+полный обязательный ручной прогон с TalkBack и длинным списком при увеличенном
+шрифте не подтверждён. Прогресс **16/21**, группа 6 не выполнялась.
+Commit, push, архивирование и изменение утверждённых spec/design не выполнялись.
+
+## Дополнительная проверка 5.3 после независимого ревью
+
+**2026-11-01**, тот же AVD Pixel_6_Pro / Android 13 API 33 / emulator-5554,
+Expo Go и Metro TaskFlow на **8082**. На старте загружены **14** синтетических
+задач из первого прогона. Продуктовый код, архитектура, зависимости, тесты,
+proposal/spec/design в этой проверке **не изменялись**. Пользователь отдельно
+разрешил временные изменения настроек Android с восстановлением; настройки
+Mac не менялись. Новые задачи при этих проверках не создавались.
+
+Доказательства находятся в [taskflow-ui-53](verification/taskflow-ui-53/manifest.json):
+manifest содержит размеры и SHA-256 файлов. Это управляемый прогон настоящего
+Android UI со скриншотами и read-only диагностикой; полное слуховое ревью
+человеком не выполнялось. Component-тесты не выдаются за TalkBack-прогон.
+
+### Длинный список при системном шрифте 200% — TM-06/TM-11
+
+Временное значение `font_scale=2.0`. После завершения перезапуска Activity
+проверены форма и верх списка → прокрутка вниз → старые задачи → прокрутка вверх
+→ поле и кнопка → открытая Gboard. Промежуточный splash screen не использован
+как доказательство UI. Итог: **пройдено** на указанном AVD.
+
+- [Верх списка и доступная форма](verification/taskflow-ui-53/font200-form.png):
+  заголовок, подпись, поле, подсказка и кнопка читаемы; высота адаптируется.
+- [Низ списка](verification/taskflow-ui-53/font200-bottom.png): доступны старая
+  Keyboard task и обе Same task. Название длиной 100 ASCII-символов отображается
+  полностью, с переносами; конец `…6789012345` виден перед следующей строкой.
+- После обратной прокрутки форма снова доступна. При открытой Gboard поле и
+  создание остаются доступны: [клавиатура при 200%](verification/taskflow-ui-53/font200-keyboard.png).
+
+Это проверка реальной компоновки и скролла, а не вывод из React props.
+Масштаб после проверки восстановлен до исходного **1.0**.
+
+### Нативная вставка многострочного названия — TM-01
+
+Использован штатный `EmulatorController.setClipboard` из SDK
+`emulator/lib/emulator_controller.proto`, затем настоящий Android Paste.
+Первый LF вставлен через [нативное всплывающее меню Paste](verification/taskflow-ui-53/paste-menu.png).
+Для повторяемого сравнения восьми разделителей использован `KEYCODE_PASTE`:
+это тот же путь нативного TextInput/Clipboard, без вызова `onChangeText` из теста.
+Исходный clipboard сохранён приватно и затем восстановлен.
+
+Read-only CDP-проверка читала `memoizedProps.value` настоящего TextInput,
+его code points и подтверждённый taskCount из работающего React-дерева.
+Она не вызывала обработчики и не меняла React state, хранилище или исходники.
+[Точное выражение проверки](verification/taskflow-ui-53/read-only-runtime-probe.txt).
+На время чтения Inspector подключался к локальному Metro. После изменения
+масштаба старый inspector target сначала не имел Runtime; после обычного
+повторного открытия development-проекта получен активный `main` context.
+Обхода авторизации или изменения настроек debugger не было.
+
+| Разделитель в clipboard между First и Second | Фактический React-черновик до и после отправки | Результат |
+| --- | --- | --- |
+| LF U+000A | `First\nSecond`, точка 10 | Ошибка однострочности, текст сохранён |
+| CR U+000D | `First\rSecond`, точка 13 | То же |
+| CRLF U+000D U+000A | Обе точки 13, 10, в исходном порядке | То же |
+| VT U+000B | Точка 11 сохранена | То же |
+| FF U+000C | Точка 12 сохранена | То же |
+| NEL U+0085 | Точка 133 сохранена | То же |
+| LS U+2028 | Точка 8232 сохранена | То же |
+| PS U+2029 | Точка 8233 сохранена | То же |
+
+[Сводка всех восьми проверок](verification/taskflow-ui-53/native-paste-summary.json)
+содержит полный точный черновик и code points. Для каждого варианта сохранены
+отдельные `paste-<separator>-before-submit.json` и `paste-<separator>-after-submit.json`;
+пример: [LF до отправки](verification/taskflow-ui-53/paste-lf-before-submit.json),
+[LF после отправки](verification/taskflow-ui-53/paste-lf-after-submit.json).
+Во всех восьми случаях число подтверждённых задач осталось **14**, а сообщение —
+«Название должно быть в одну строку. Удалите переводы строк.».
+[Видимая ошибка после Paste](verification/taskflow-ui-53/paste-lf-result.png).
+
+Важная особенность Android: LF визуально выглядит как пробел в single-line
+TextInput, а native Copy выделенного текста возвращает `First Second`.
+Это преобразование представления/копирования, **не потеря LF в форме**:
+read-only измерение JS до и после submit подтверждает U+000A. Не делаем вывод
+о фактическом черновике по внешнему виду поля или результату Copy.
+TM-01 на указанном Android подтверждён для всех согласованных разделителей;
+дефект, требующий изменения кода, не обнаружен.
+
+### Причина конфликта UiAutomation и реальный TalkBack — TM-11
+
+[Android UiAutomation](https://developer.android.com/reference/android/app/UiAutomation#FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+по умолчанию подавляет остальные accessibility-службы; API имеет отдельный
+флаг `FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES` для совместной работы.
+На этой машине agent-device 0.20.5 держал persistent instrumentation
+`com.callstack.agentdevice.snapshothelper/.SnapshotInstrumentation`.
+Пока helper работал, dumpsys показывал UiAutomation:
+[состояние с automation](verification/taskflow-ui-53/automation-attached.txt).
+
+Завершён **только этот helper**, без остановки Expo Go, Metro или посторонних
+процессов. После `am force-stop com.callstack.agentdevice.snapshothelper`
+UiAutomation исчезла: [после отключения](verification/taskflow-ui-53/automation-detached.txt).
+Затем включён установленный TalkBack. Получено фактическое подключение службы,
+`touchExplorationEnabled=true`, `serviceHandlesDoubleTap=true`, accessibility focus:
+[TalkBack подключён](verification/taskflow-ui-53/talkback-bound.txt).
+После этого snapshot/press/longpress agent-device **не использовались**:
+они могли бы снова подключить UiAutomation.
+
+Обычные `adb shell input` инъекции не использованы как доказательство жестовой
+навигации диктором: они могут прокручивать приложение, обходя touch exploration.
+Для проверенных жестов использован аппаратный `EmulatorController.sendTouch`
+(Linux multitouch protocol B из SDK), затем read-only `screencap`/`dumpsys`.
+Отправлялись реальные касания с обязательным release pressure=0, без
+accessibility automation-соединения и без debug-элементов приложения.
+
+Подтверждено на настоящем TalkBack:
+
+- [Поле получает accessibility focus](verification/taskflow-ui-53/talkback-field-hardware.png).
+- Жест «следующий элемент» переводит фокус на
+  [подсказку](verification/taskflow-ui-53/talkback-next-focus.png), затем на
+  [«Создать задачу»](verification/taskflow-ui-53/talkback-create-focus.png).
+- Двойное касание активирует создание с пустым полем; появляется текстовая
+  ошибка «Введите название задачи.», новых задач нет.
+- [Ошибка получает accessibility focus](verification/taskflow-ui-53/talkback-validation-focus.png).
+  [Read-only состояние формы после активации](verification/taskflow-ui-53/talkback-validation-form.json)
+  подтверждает пустой draft, сообщение и прежний taskCount=14.
+- [Dumpsys после этих действий](verification/taskflow-ui-53/talkback-final-before-restore.txt)
+  подтверждает активный TalkBack без UiAutomation.
+
+Доступное название поля требует отдельного слухового подтверждения.
+В настоящем runtime одновременно заданы `accessibilityLabel="Название задачи"`
+и `accessibilityLabelledBy="task-title-label"`; связанный Text имеет то же название.
+[Runtime props](verification/taskflow-ui-53/initial-form.json).
+[Документация React Native](https://reactnative.dev/docs/accessibility#accessibilitylabelledby)
+описывает label и labelledBy как источники текста для TalkBack. В установленном
+RN 0.88.1 `ReactAccessibilityDelegate.kt` связывает `info.setLabeledBy(...)`,
+а accessibilityLabel задаёт content description. Наличие этих двух источников
+не доказывает корректную итоговую фразу и не доказывает её дублирование.
+Автоматический component matcher с именем поля эту слуховую проверку не заменяет.
+Без подтверждённого дефекта props не удалялись и код не менялся.
+
+Сохранены записи реального аудиовыхода эмулятора (16 kHz, mono PCM WAV):
+[фокус и переходы формы](verification/taskflow-ui-53/talkback-field-hardware.wav),
+[активация и ошибка валидации](verification/taskflow-ui-53/talkback-validation-error.wav).
+[Метаданные записи](verification/taskflow-ui-53/audio-capture-metadata.json)
+подтверждают ненулевой сигнал, но **не распознавание или правильность речи**.
+Записи не прослушаны: инструментальный интерфейс вернул
+`audio content omitted because you do not support audio input`.
+Внешние сервисы распознавания, изменение громкости, микрофона и настроек Mac
+не использовались. Факт наличия аудио не объявлен успешной проверкой озвучивания.
+
+**Оставшийся точный блокер:** нет возможности услышать и оценить TalkBack
+в доступном интерфейсе агента. Не подтверждены итоговая фраза поля и отсутствие
+повтора при label + labelledBy, полнота/кратность озвучивания ошибки, динамических
+сообщений и состояний disabled/busy. Нативные retry-кнопки и длительные
+loading/saving/reconciling/outcomeUnknown этим прогоном не воспроизводились:
+для них остаются прежние component/integration-доказательства, но нет
+слухового результата TalkBack. Production-переключатели отказов и специальные
+экраны не добавлялись. Для закрытия 5.3 требуется слуховой прогон человеком
+без UiAutomation, включая эти сценарии; существующие аудиозаписи покрывают
+только поле/переходы формы и ошибку валидации.
+
+### Восстановление окружения и итог 5.3
+
+[Исходные настройки](verification/taskflow-ui-53/settings-before.json) и
+[настройки после восстановления](verification/taskflow-ui-53/settings-after.json)
+совпадают **по всем пяти значениям**: font_scale=1.0,
+enabled_accessibility_services отсутствует, accessibility_enabled=1 (исходное
+сырое значение), Gboard и show_ime_with_hard_keyboard=1. Само сырое значение
+accessibility_enabled не считается признаком включённого TalkBack:
+[финальный dumpsys](verification/taskflow-ui-53/after-restore.txt) показывает
+`Bound services: {}`, `touchExplorationEnabled=false`, UiAutomation отсутствует.
+Clipboard восстановлен из приватной копии; его исходное содержимое не включено
+в публичные доказательства. Временный React DevTools daemon остановлен.
+
+[Финальный экран](verification/taskflow-ui-53/final-standard.png) оставлен с обычным
+шрифтом, пустой формой и теми же 14 задачами;
+[состояние формы](verification/taskflow-ui-53/final-form.json): ready, draft пуст,
+сообщений нет, создание доступно. Исходники TaskFlow и настройки Mac не менялись.
+
+Проверены длинный список при 200%, нативный Paste и реальная TalkBack-навигация
+по доступным элементам. Полный слуховой прогон **не завершён**, поэтому checkbox
+5.3 остаётся **[ ]**, общий прогресс — **16/21**. Как полностью закрытый этап 5
+к коммиту **пока не готов**: требуется указанная ручная слуховая проверка.
+Группа 6, архивирование, commit и push не выполнялись.
+
+Регрессия после дополнительной проверки (закреплённый Node 26.13.0 / npm 11.17.0):
+`npm test -- --watch=false` — **exit 0, 6 suites / 136 tests passed**;
+`npm run typecheck`, `npm run lint`,
+`openspec validate task-management-foundation --strict`, `git diff --check` —
+**exit 0**. Проверены **111** относительных файловых ссылок README/traceability/tasks
+и все **42** SHA-256 из manifest доказательств. OpenSpec apply подтвердил
+`5.3: done=false`, прогресс **16/21**. Эти автоматические результаты не закрывают
+оставшуюся слуховую проверку.

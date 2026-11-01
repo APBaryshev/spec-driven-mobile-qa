@@ -1,25 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { TasksScreen } from './src/features/tasks/TasksScreen';
+import { taskStorage } from './src/features/tasks/taskStorage';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text accessibilityRole="header" style={styles.title}>TaskFlow</Text>
-      <Text>Основа приложения готова.</Text>
-    </View>
+    <SafeAreaProvider>
+      <TasksScreen storage={taskStorage} />
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-});
