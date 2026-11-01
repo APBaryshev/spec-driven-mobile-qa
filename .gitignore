@@ -1,2 +1,42 @@
 # macOS
 .DS_Store
+
+# Dependencies and generated Expo/native output
+node_modules/
+.expo/
+dist/
+android/
+ios/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+
+# Local environment files; safe templates remain reviewable
+.env
+.env.*
+!.env.example
+!.env.*.example
+.npmrc.local
+/.npmrc
+*.local.properties
+local.properties
+
+# Local credentials and Android signing material
+/.aws/
+credentials.json
+credentials.local.json
+google-services.local.json
+*.keystore
+*.jks
+*.private.pem
+*.private.key
+
+# Tool caches and generated Android packages outside native directories
+.eslintcache
+.metro-cache/
+.cache/
+*.apk
+*.aab
+
+# macOS resource fork files
+._*
