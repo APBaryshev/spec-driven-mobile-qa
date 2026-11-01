@@ -12,6 +12,8 @@
 Самостоятельная Android-сборка и новые E2E-доказательства описаны в
 [отчёте группы 6](verification/taskflow-android-6/report.md).
 Исторические отметки ниже относятся к состоянию соответствующего этапа.
+Актуальное закрытие последней задачи — в разделе
+[ручного подтверждения TalkBack человеком](#ручное-подтверждение-talkback-человеком-закрытие-53).
 
 ## Сверка сценариев TM-01–TM-12: группа 6
 
@@ -21,9 +23,10 @@
 тестами и именами сценариев сохранены в таблицах этапов 2–5 ниже.
 Финальные Maestro-прогоны 01–04 и три запуска 05 — **7 Passed, 0 Failed**;
 JUnit и скриншоты связаны с каждым результатом в Android report. Native
-fault-сценарий во время reconciling — **Blocked**, TalkBack 5.3 — **Blocked**;
-они не включены в число Passed. Первоначальные ошибки настройки flow описаны
-в report. Группа 6 завершена; общий прогресс **20/21**, незавершена только 5.3.
+fault-сценарий во время reconciling — **Blocked** и не включён в число Passed.
+Первоначальные ошибки настройки flow описаны в report. После отдельного
+ручного подтверждения TalkBack человеком задача 5.3 закрыта; общий прогресс
+**21/21**. Подтверждение человека не увеличивает число автоматических Passed.
 
 | Требование и сценарии | Метод и конкретные проверки | Граница доказательства |
 | --- | --- | --- |
@@ -37,7 +40,7 @@ fault-сценарий во время reconciling — **Blocked**, TalkBack 5.3
 | TM-08: ошибка доступа, повреждение, успешное повторное чтение | [task-storage.test.ts](../tests/task-storage.test.ts): `rejects %s without deleting...`, `read failure preserves bytes...`; safe-loading suite в [use-tasks.test.tsx](../tests/use-tasks.test.tsx), UI reload test | Passed в integration/UI; чужие данные и native DB намеренно не повреждались |
 | TM-09: повторный запуск, возврат из фона, остановка во время контрольного чтения | [02](../.maestro/flows/02-creation-persistence.yaml), [04](../.maestro/flows/04-offline-background.yaml), [05](../.maestro/flows/05-verify-restored.yaml); `new session after interrupted reconciliation loads %s without replay`, `keeps unknown across failed rechecks and foreground transitions...` в [use-tasks.test.tsx](../tests/use-tasks.test.tsx) | Native force-stop, background, Activity recreation и background process kill различены в report. Остановка именно во время reconciling — только integration, native сценарий Blocked |
 | TM-10: без сети; безопасная диагностика | [04](../.maestro/flows/04-offline-background.yaml), Android network state в report; `expectSafeError` в [task-storage.test.ts](../tests/task-storage.test.ts) | Offline проверяется на уровне ОС; отсутствие утечек в ошибках — integration + review исходников, не сетевой security audit |
-| TM-11: TalkBack и ошибки, открытая клавиатура | [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx) labels/roles/states; native keyboard в [create-task](../.maestro/shared/create-task.yaml); ручные доказательства 5.3 ниже | Клавиатура и текстовые ошибки — native E2E; озвучивание TalkBack остаётся Blocked без слухового подтверждения человеком, 5.3 открыта |
+| TM-11: TalkBack и ошибки, открытая клавиатура | [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx) labels/roles/states; native keyboard в [create-task](../.maestro/shared/create-task.yaml); ручные доказательства 5.3 ниже | Клавиатура и текстовые ошибки — native E2E; корректная работа TalkBack подтверждена пользователем вручную, 5.3 закрыта (отдельная запись ниже). Слуховой результат не выводится из component/agent-device evidence |
 | TM-12: медленная запись/проверка, отзывчивость списка и безопасное восстановление | `rapid button and keyboard submissions share the hook guard; slow saving and reconciliation retain the list` в [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx); reconciliation suite [use-tasks.test.tsx](../tests/use-tasks.test.tsx) | Passed с задержанными promises в Jest. Нативные длительные состояния и прокрутка в этом окне не заявляются проверенными |
 
 ## TM-01 — проверка названия
@@ -587,3 +590,41 @@ Clipboard восстановлен из приватной копии; его и
 и все **42** SHA-256 из manifest доказательств. OpenSpec apply подтвердил
 `5.3: done=false`, прогресс **16/21**. Эти автоматические результаты не закрывают
 оставшуюся слуховую проверку.
+
+
+## Ручное подтверждение TalkBack человеком: закрытие 5.3
+
+Дата фиксации — **2026-11-01**. Источник — прямое подтверждение владельца проекта
+в этой сессии после независимого ревью и коммита группы 6: пользователь лично
+включил TalkBack на Android-эмуляторе и подтвердил корректную работу экранного
+диктора с TaskFlow. Результат — **пройдено, ручная проверка человеком** (TM-11).
+
+Это самостоятельное пользовательское подтверждение. Оно не является результатом
+Jest, Maestro или agent-device и не выводится из скриншотов, accessibility props,
+переходов фокуса либо наличия аудиосигнала. Агент не прослушивал прежние записи;
+исторические ограничения его слуховой проверки остаются описанными выше.
+Для нового ручного подтверждения отдельные build identifier, версия TalkBack
+и пошаговый протокол не сообщены; дополнительные детали прогона не предполагаются.
+
+Критерии задачи 5.3 подтверждены в совокупности:
+
+- Доступные имена, роли и disabled/busy states — существующие component-проверки
+  из раздела [группы 5](#пользовательский-экран-группа-5).
+- Клавиатура, шрифт 200%, длинный список, прокрутка и взаимодействие с настоящим
+  TalkBack без UiAutomation — ранее записанные Android-проверки в разделе
+  [дополнительного ревью 5.3](#дополнительная-проверка-53-после-независимого-ревью).
+  Там же отдельно подтверждён нативный Paste LF/CR/CRLF/VT/FF/NEL/LS/PS (TM-01).
+- Корректная работа экранного диктора — новое личное подтверждение пользователя,
+  снимающее оставшийся блокер ручной проверки TalkBack.
+
+Задача **5.3 выполнена**, прогресс change — **21/21**. Предыдущие отметки
+16/21, 20/21 и открытой 5.3 в исторических отчётах описывают состояние до этого
+подтверждения. Число автоматических проверок не меняется: результаты группы 6 —
+136 Jest-тестов и 7 финальных Maestro-прогонов; в этой сессии они не повторялись.
+
+Известные границы доказательств сохраняются: остановка нативного процесса именно
+во время reconciling и возврат при outcomeUnknown не воспроизводились в native
+E2E; для них остаются integration-доказательства и ограничения
+[Android report](verification/taskflow-android-6/report.md).
+Пользовательское подтверждение TalkBack не объявляет эти fault-сценарии пройденными
+и не добавляет результатов для иных устройств, Android API или iOS.
