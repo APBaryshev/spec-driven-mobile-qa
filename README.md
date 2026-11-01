@@ -2,9 +2,12 @@
 
 Учебное React Native приложение: Spec-Driven Development с OpenSpec,
 AI-assisted разработка и проверяемые требования. Сейчас реализована только
-основа приложения: один экран с заголовком TaskFlow. Создание и хранение задач
+основа приложения, чистая модель задач и адаптер хранения с integration-тестами.
+На экране пока только заголовок TaskFlow; подключение хранения и создание задач
 будут реализованы следующими группами change
 [`task-management-foundation`](openspec/changes/task-management-foundation/tasks.md).
+Формат и ограничения хранения описаны в [docs/storage.md](docs/storage.md),
+результаты проверок — в [docs/traceability.md](docs/traceability.md).
 
 ## Зафиксированное окружение
 
