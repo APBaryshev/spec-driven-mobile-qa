@@ -4,8 +4,8 @@
 AI-assisted разработка и проверяемые требования. Реализован один экран создания
 и просмотра задач: TaskFlow, однострочная форма, подтверждённый список с новыми
 задачами сверху, пустое состояние и безопасные повторы при ошибках.
-Ход реализации — в change
-[`task-management-foundation`](openspec/changes/task-management-foundation/tasks.md).
+Ход реализации — в архиве change
+[`task-management-foundation`](openspec/changes/archive/2026-11-01-task-management-foundation/tasks.md).
 Формат и ограничения хранения описаны в [docs/storage.md](docs/storage.md),
 результаты проверок — в [docs/traceability.md](docs/traceability.md).
 

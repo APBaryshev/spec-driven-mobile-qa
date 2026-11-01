@@ -1,7 +1,7 @@
 # Прослеживаемость TaskFlow
 
-Источник требований: [task-management/spec.md](../openspec/changes/task-management-foundation/specs/task-management/spec.md).
-Область этого отчёта — задачи 2.1–6.4 [плана](../openspec/changes/task-management-foundation/tasks.md).
+Источник требований: [task-management/spec.md](../openspec/specs/task-management/spec.md).
+Область этого отчёта — задачи 2.1–6.4 [плана](../openspec/changes/archive/2026-11-01-task-management-foundation/tasks.md).
 «Пройдено, unit» означает проверку правил модели в Jest, а не готовность всего
 пользовательского сценария. «Пройдено, integration» для хранения означает настоящую
 сериализацию и JS-обёртку AsyncStorage с управляемым нативным key-value I/O.
