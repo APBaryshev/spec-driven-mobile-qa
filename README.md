@@ -65,14 +65,14 @@ Safe area обеспечивает `react-native-safe-area-context` **5.10.1**, 
 
 Android baseline для проверки: стандартный Android SDK, AVD `Pixel_6_Pro`,
 Android 13 / API 33, Google APIs, arm64-v8a. Установлены emulator 37.1.11,
-platform-tools 37.0.1 и OpenJDK 17.0.20. Для текущего запуска через Expo Go
-Java и Gradle не используются. Нативная сборка и её toolchain будут проверяться
-в задаче 6.1.
+platform-tools 37.0.1 и OpenJDK 17.0.20. Для Expo Go Java/Gradle не нужны;
+toolchain самостоятельной сборки приведён ниже, результаты — в
+[отчёте группы 6](docs/verification/taskflow-android-6/report.md).
 
 Имя приложения — **TaskFlow**, slug — `taskflow`, Android application ID —
 `dev.taskflow.app`, версия — `0.1.0`, versionCode — `1`.
 При запуске через Expo Go используется контейнер `host.exp.exponent`;
-собственный application ID вступит в действие в нативной сборке.
+самостоятельный APK запускается как `dev.taskflow.app`.
 
 ## Установка и проверки
 
@@ -117,6 +117,55 @@ credential-файлы и файлы подписи исключены из Git. 
 их содержимого. Общие проектные JSON-конфигурации этим правилом не скрываются.
 
 ## Запуск Android
+
+### Самостоятельный APK для эмулятора
+
+Для проверки MVP используйте release APK со встроенным Hermes/JS bundle.
+Expo Go и запущенный Metro ему не нужны. На macOS arm64 после `nvm use`
+и `npm ci`:
+
+```sh
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+# JAVA_HOME — JDK 17; java -version должен показывать 17
+npm run android:prebuild
+npm run android:build
+adb -s emulator-5554 install -r android/app/build/outputs/apk/release/app-release.apk
+adb -s emulator-5554 shell am start -n dev.taskflow.app/.MainActivity
+```
+
+`android:prebuild` генерирует только Android стандартным Expo prebuild;
+`android/` исключён из Git и восстанавливается из app.json и npm lockfile.
+`android:build` вызывает стандартный Gradle `assembleRelease` для `arm64-v8a`.
+Для x86_64 AVD замените `-PreactNativeArchitectures=arm64-v8a` на `x86_64`
+при прямом вызове `./android/gradlew -p android assembleRelease`.
+Не используйте `prebuild --clean` в каталоге с собственными native-изменениями.
+
+Toolchain из закреплённых Expo/RN: Gradle **9.4.1**, AGP **9.2.1**,
+Kotlin **2.2.10**, NDK **27.1.12297006**, Build Tools **37.0.0**,
+compileSdk **37**, targetSdk **36**, minSdk **24**. Нужны Android SDK,
+принятые лицензии и сеть для первой загрузки build-зависимостей.
+Generated release использует стандартный debug signing key Expo template:
+это устанавливаемая проверочная сборка, подпись для магазина здесь не настроена.
+Не удаляйте установленное приложение при несовпадении подписи: это удалит данные.
+
+Собственный package — `dev.taskflow.app`, versionName `0.1.0`, versionCode `1`.
+Команда `install -r` сохраняет данные совместимой существующей установки.
+Maestro запускается напрямую, без собственного runner; предусловия, изоляция,
+offline/lifecycle-команды и фактические результаты —
+[Android E2E report](docs/verification/taskflow-android-6/report.md).
+Автоматизация предназначена для отдельного тестового профиля/AVD с синтетическими
+данными. В persistence-flow нет `clearState`.
+
+Итог группы 6: **7 успешных Maestro-прогонов**, Jest **136/136**, typecheck,
+ESLint и OpenSpec strict validation пройдены. Проверены offline, force-stop,
+возврат из фона, пересоздание Activity и остановка фонового процесса.
+Прослеживаемость TM-01–TM-12 — в
+[docs/traceability.md](docs/traceability.md#сверка-сценариев-tm-01tm-12-группа-6).
+Прогресс OpenSpec — **20/21**: открыта 5.3, требуется слуховая проверка TalkBack
+человеком. Нативная остановка во время контрольного чтения не воспроизводилась;
+её проверка остаётся integration, граница доказательств записана в report.
+
+### Разработка через Expo Go
 
 Сначала проверьте процессы, порт Metro и устройства:
 
@@ -225,8 +274,10 @@ uiautomator dump`: присутствуют оба ожидаемых текст
 - Metro выводил предупреждение Node о конфликте `NO_COLOR`/`FORCE_COLOR`
   в окружении терминала; это не помешало сборке и показу экрана.
 
-Проверка Expo Go не заменяет автономную Android-сборку, E2E и проверку сохранности
-из группы 6. iOS и web в рамках этого этапа не проверяются.
+Историческая проверка Expo Go не заменяет автономную Android-сборку, E2E и
+проверку сохранности: новые результаты группы 6 приведены в
+[Android report](docs/verification/taskflow-android-6/report.md).
+iOS и web в рамках этого change не проверяются.
 
 Настройка основана на официальных руководствах
 [Expo: Jest и Testing Library](https://docs.expo.dev/develop/unit-testing/)

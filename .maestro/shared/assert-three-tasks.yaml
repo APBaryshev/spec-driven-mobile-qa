@@ -1,0 +1,20 @@
+appId: dev.taskflow.app
+---
+# All three rows fit on this baseline device; index 3 must not exist.
+- copyTextFrom:
+    id: task-title
+    index: 0
+- assertTrue: ${maestro.copiedText == 'Newest'}
+- copyTextFrom:
+    id: task-title
+    index: 1
+- assertTrue: ${maestro.copiedText == 'Same task'}
+- copyTextFrom:
+    id: task-title
+    index: 2
+- assertTrue: ${maestro.copiedText == 'Same task'}
+- assertNotVisible:
+    id: task-title
+    index: 3
+- assertNotVisible:
+    id: task-empty

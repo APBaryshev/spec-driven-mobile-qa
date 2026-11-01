@@ -1,15 +1,44 @@
 # Прослеживаемость TaskFlow
 
 Источник требований: [task-management/spec.md](../openspec/changes/task-management-foundation/specs/task-management/spec.md).
-Область этого отчёта — задачи 2.1–5.4 [плана](../openspec/changes/task-management-foundation/tasks.md).
+Область этого отчёта — задачи 2.1–6.4 [плана](../openspec/changes/task-management-foundation/tasks.md).
 «Пройдено, unit» означает проверку правил модели в Jest, а не готовность всего
 пользовательского сценария. «Пройдено, integration» для хранения означает настоящую
 сериализацию и JS-обёртку AsyncStorage с управляемым нативным key-value I/O.
 Текущие UI-проверки и ручной Android-прогон приведены в разделе
 [«Пользовательский экран: группа 5»](#пользовательский-экран-группа-5).
 Предыдущие разделы сохраняют результаты на момент соответствующего этапа;
-их отметки «UI не проверен» уточняются новой таблицей. Нативная сохранность
-Android E2E остаётся непроверенной (группа 6).
+их отметки «UI не проверен» уточняются новыми таблицами.
+Самостоятельная Android-сборка и новые E2E-доказательства описаны в
+[отчёте группы 6](verification/taskflow-android-6/report.md).
+Исторические отметки ниже относятся к состоянию соответствующего этапа.
+
+## Сверка сценариев TM-01–TM-12: группа 6
+
+Среда, build identifier/SHA-256, команды и ограничения:
+[Android report](verification/taskflow-android-6/report.md).
+Все 136 Jest-тестов повторно пройдены в группе 6. Подробные связи с отдельными
+тестами и именами сценариев сохранены в таблицах этапов 2–5 ниже.
+Финальные Maestro-прогоны 01–04 и три запуска 05 — **7 Passed, 0 Failed**;
+JUnit и скриншоты связаны с каждым результатом в Android report. Native
+fault-сценарий во время reconciling — **Blocked**, TalkBack 5.3 — **Blocked**;
+они не включены в число Passed. Первоначальные ошибки настройки flow описаны
+в report. Группа 6 завершена; общий прогресс **20/21**, незавершена только 5.3.
+
+| Требование и сценарии | Метод и конкретные проверки | Граница доказательства |
+| --- | --- | --- |
+| TM-01: пробелы по краям, пустой/пробельный ввод, 1/100/101 точка, emoji, восемь переводов строк | [task-model.test.ts](../tests/task-model.test.ts), [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx); [01-validation](../.maestro/flows/01-validation.yaml), trim в [02-creation-persistence](../.maestro/flows/02-creation-persistence.yaml), 100 символов в [03-long-list](../.maestro/flows/03-long-list.yaml) | Unicode-границы и точное сохранение многострочного ввода — Jest; нативный Paste группы 5 описан ниже и выполнялся в Expo Go. Новый Maestro inputText использует ASCII; не выдаётся за нативную проверку emoji/Paste |
+| TM-02: два одинаковых названия, разные и стабильные ID | [task-creation.test.ts](../tests/task-creation.test.ts), `round trips exact IDs, duplicate titles, Unicode and order through v1` в [task-storage.test.ts](../tests/task-storage.test.ts); [02](../.maestro/flows/02-creation-persistence.yaml), [04](../.maestro/flows/04-offline-background.yaml) | Внутренние ID/коллизии — unit/integration; E2E проверяет две отдельные видимые строки и сохранность порядка |
+| TM-03: успех, незавершённая запись, запись несмотря на ошибку | [use-tasks.test.tsx](../tests/use-tasks.test.tsx): `guards rapid submissions...`, `reconciles changed=%s...`; [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx): `rapid button and keyboard submissions...`; [create-task](../.maestro/shared/create-task.yaml) | Обычный native save и очистка поля — Maestro; задержка и ошибочный ответ — управляемый I/O в integration |
+| TM-04: быстрое нажатие, неизвестный исход | `guards rapid submissions synchronously...`, `blocks writes for %s...` в [use-tasks.test.tsx](../tests/use-tasks.test.tsx); UI guard в [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx) | Passed в Jest. Длительное native saving/unknown не воспроизводилось, быстрые действия Maestro не доказывают попадание в это окно |
+| TM-05: сбой, успешный повтор, ошибка/неожиданный результат чтения, повтор до sent/base, изменение названия после каждого исхода | Suite `useTasks write reconciliation` в [use-tasks.test.tsx](../tests/use-tasks.test.tsx); `proven absence permits correction=%s...`, `unknown result retries only reading...` в [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx) | Passed в integration/UI с настоящей логикой. Нативная fault injection не выполнялась; production-переключателей нет |
+| TM-06: первый запуск, последовательный порядок, длинный список и полные названия | [01](../.maestro/flows/01-validation.yaml), [02](../.maestro/flows/02-creation-persistence.yaml), [03](../.maestro/flows/03-long-list.yaml), [assert-three-tasks](../.maestro/shared/assert-three-tasks.yaml) | Maestro проверяет видимый результат; screenshot и JUnit в Android report. Геометрия и число строк относятся к указанному baseline AVD |
+| TM-07: ожидание чтения, запрет создания до результата, отсутствие стартовой записи | `distinguishes loading from empty and errors...` в [use-tasks.test.tsx](../tests/use-tasks.test.tsx), `loading, empty and read error are distinct...` в [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx) | Passed в Jest. Успешный native startup — E2E; его быстрота не доказывает состояние ожидания |
+| TM-08: ошибка доступа, повреждение, успешное повторное чтение | [task-storage.test.ts](../tests/task-storage.test.ts): `rejects %s without deleting...`, `read failure preserves bytes...`; safe-loading suite в [use-tasks.test.tsx](../tests/use-tasks.test.tsx), UI reload test | Passed в integration/UI; чужие данные и native DB намеренно не повреждались |
+| TM-09: повторный запуск, возврат из фона, остановка во время контрольного чтения | [02](../.maestro/flows/02-creation-persistence.yaml), [04](../.maestro/flows/04-offline-background.yaml), [05](../.maestro/flows/05-verify-restored.yaml); `new session after interrupted reconciliation loads %s without replay`, `keeps unknown across failed rechecks and foreground transitions...` в [use-tasks.test.tsx](../tests/use-tasks.test.tsx) | Native force-stop, background, Activity recreation и background process kill различены в report. Остановка именно во время reconciling — только integration, native сценарий Blocked |
+| TM-10: без сети; безопасная диагностика | [04](../.maestro/flows/04-offline-background.yaml), Android network state в report; `expectSafeError` в [task-storage.test.ts](../tests/task-storage.test.ts) | Offline проверяется на уровне ОС; отсутствие утечек в ошибках — integration + review исходников, не сетевой security audit |
+| TM-11: TalkBack и ошибки, открытая клавиатура | [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx) labels/roles/states; native keyboard в [create-task](../.maestro/shared/create-task.yaml); ручные доказательства 5.3 ниже | Клавиатура и текстовые ошибки — native E2E; озвучивание TalkBack остаётся Blocked без слухового подтверждения человеком, 5.3 открыта |
+| TM-12: медленная запись/проверка, отзывчивость списка и безопасное восстановление | `rapid button and keyboard submissions share the hook guard; slow saving and reconciliation retain the list` в [tasks-screen.test.tsx](../tests/tasks-screen.test.tsx); reconciliation suite [use-tasks.test.tsx](../tests/use-tasks.test.tsx) | Passed с задержанными promises в Jest. Нативные длительные состояния и прокрутка в этом окне не заявляются проверенными |
 
 ## TM-01 — проверка названия
 

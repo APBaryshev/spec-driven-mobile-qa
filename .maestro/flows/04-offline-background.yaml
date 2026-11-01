@@ -1,0 +1,29 @@
+appId: dev.taskflow.app
+name: Offline creation, background return and force-stop persistence
+---
+# Independent scenario: empty dedicated storage, OS network disabled externally.
+- launchApp
+- assertVisible:
+    id: task-empty
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: "Same task"
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: "Same task"
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: "Newest"
+- runFlow: ../shared/assert-three-tasks.yaml
+- pressKey: HOME
+- launchApp:
+    stopApp: false
+- runFlow: ../shared/assert-three-tasks.yaml
+- stopApp
+- launchApp:
+    stopApp: false
+- runFlow: ../shared/assert-three-tasks.yaml
+- takeScreenshot: offline-restored

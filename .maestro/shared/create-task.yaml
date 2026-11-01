@@ -1,0 +1,18 @@
+appId: dev.taskflow.app
+---
+- tapOn:
+    id: task-title-input
+- inputText: ${TITLE}
+- tapOn:
+    id: task-create-button
+- assertVisible: "Задача создана."
+- copyTextFrom:
+    id: task-title-input
+# Maestro 2.6.1 falls back to the accessibility label for empty EditText.
+- assertTrue: ${maestro.copiedText == 'Название задачи'}
+# An immediate resubmit must validate as empty, never create the same task again.
+- tapOn:
+    id: task-create-button
+- assertVisible: "Введите название задачи."
+- assertVisible:
+    id: task-title-input

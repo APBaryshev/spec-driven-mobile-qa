@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="Pixel_6_Pro" tests="1" failures="0" time="3.0">
+    <testcase id="Verify externally triggered lifecycle recovery" name="Verify externally triggered lifecycle recovery" classname="Verify externally triggered lifecycle recovery" file=".maestro/flows/05-verify-restored.yaml" time="3.0" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="Pixel_6_Pro" tests="1" failures="0" time="46.0">
+    <testcase id="Offline creation, background return and force-stop persistence" name="Offline creation, background return and force-stop persistence" classname="Offline creation, background return and force-stop persistence" file=".maestro/flows/04-offline-background.yaml" time="46.0" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

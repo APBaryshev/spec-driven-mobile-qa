@@ -1,0 +1,36 @@
+appId: dev.taskflow.app
+name: Long title and scrollable list
+---
+# Independent scenario: requires empty dedicated test storage.
+- launchApp
+- assertVisible:
+    id: task-empty
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: ${'1234567890'.repeat(10)}
+- evalScript: ${output.row = 0}
+- repeat:
+    times: 14
+    commands:
+      - evalScript: ${output.row = output.row + 1}
+      - scrollUntilVisible:
+          element:
+            id: task-title-input
+          direction: UP
+      - runFlow:
+          file: ../shared/create-task.yaml
+          env:
+            TITLE: ${'List task ' + output.row}
+- scrollUntilVisible:
+    element:
+      text: "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+    direction: DOWN
+    visibilityPercentage: 100
+- takeScreenshot: long-list-bottom
+- scrollUntilVisible:
+    element:
+      id: task-title-input
+    direction: UP
+- assertVisible: "List task 14"
+- takeScreenshot: long-list-top

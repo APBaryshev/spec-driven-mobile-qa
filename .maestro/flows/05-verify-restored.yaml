@@ -1,0 +1,8 @@
+appId: dev.taskflow.app
+name: Verify externally triggered lifecycle recovery
+---
+# Read-only assertions after external Activity recreation or background am kill.
+# Deliberately does not force-stop, clear, or create any tasks.
+- launchApp:
+    stopApp: false
+- runFlow: ../shared/assert-three-tasks.yaml

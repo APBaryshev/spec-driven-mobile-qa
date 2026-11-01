@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="Pixel_6_Pro" tests="1" failures="0" time="44.0">
+    <testcase id="First launch and title validation" name="First launch and title validation" classname="First launch and title validation" file=".maestro/flows/01-validation.yaml" time="44.0" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

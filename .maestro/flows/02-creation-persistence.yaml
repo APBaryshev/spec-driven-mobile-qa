@@ -1,0 +1,25 @@
+appId: dev.taskflow.app
+name: Duplicate titles, newest first and force-stop persistence
+---
+# Requires empty storage (01 leaves it empty).
+- launchApp
+- assertVisible:
+    id: task-empty
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: "  Same task  "
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: "Same task"
+- runFlow:
+    file: ../shared/create-task.yaml
+    env:
+      TITLE: "Newest"
+- runFlow: ../shared/assert-three-tasks.yaml
+- stopApp
+- launchApp:
+    stopApp: false
+- runFlow: ../shared/assert-three-tasks.yaml
+- takeScreenshot: persistence
