@@ -1,5 +1,48 @@
 schema: spec-driven
 
+context: |
+  TaskFlow is a public educational project demonstrating
+  Spec-Driven Development and AI-assisted software engineering.
+
+  The primary goal is to design and build a maintainable
+  React Native application from scratch through OpenSpec.
+
+  Specifications describe application behavior and quality,
+  not the implementation of a particular testing framework.
+
+  Automated testing is used to verify application quality.
+  Maestro is one component of the E2E testing layer.
+
+  The application must be developed independently without
+  copying proprietary code, configurations, or documentation
+  from corporate projects.
+
+  Communicate with the project owner in Russian.
+  Use English for code identifiers and filenames.
+
+rules:
+  proposal:
+    - Clearly state the purpose and scope of the change.
+    - Explicitly identify what is out of scope.
+    - Explain the user or engineering value of the change.
+
+  specs:
+    - Describe externally observable application behavior.
+    - Include verifiable acceptance scenarios.
+    - Do not prescribe implementation details unless required by a contract.
+    - Include relevant failure and edge cases.
+
+  design:
+    - Explain significant architecture decisions and trade-offs.
+    - Prefer the simplest maintainable solution.
+    - Address data consistency, error handling, and lifecycle behavior where relevant.
+    - Avoid abstractions without a demonstrated need.
+
+  tasks:
+    - Break implementation into verifiable, ordered tasks.
+    - Include appropriate quality checks.
+    - Do not claim verification without actual execution.
+
 # Project context (optional)
 # Add only constraints that should guide OpenSpec artifacts and workflows.
 # Include constraints an agent cannot infer by reading the code.
